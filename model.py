@@ -1,0 +1,242 @@
+import torch
+import torch.nn as nn
+import pennylane as qml
+from pennylane import numpy as np
+
+class ClassicalBlock(nn.Module):
+    def __init__(self, channels=64):
+        super().__init__()
+
+        self.conv1 = nn.Conv2d(
+            channels,
+            channels,
+            kernel_size=1,
+            padding=0
+        )
+
+        self.bn1 = nn.BatchNorm2d(channels)
+
+        self.conv2 = nn.Conv2d(
+            channels,
+            channels,
+            kernel_size=3,
+            padding=1
+        )
+
+        self.bn2 = nn.BatchNorm2d(channels)
+
+        self.conv3 = nn.Conv2d(
+            channels,
+            channels,
+            kernel_size=3,
+            padding=1
+        )
+
+        self.bn3 = nn.BatchNorm2d(channels)
+
+        self.relu = nn.ReLU(inplace=True)
+
+    def forward(self, x):
+
+        identity = x
+
+        out = self.conv1(x)
+        out = self.bn1(out)
+        out = self.relu(out)
+
+        out = self.conv2(out)
+        out = self.bn2(out)
+        out = self.relu(out)
+
+        # Residual connection
+        out = out + identity
+        
+        out = self.conv3(out)
+        out = self.bn3(out)
+
+        return out
+    
+class SFEModule(nn.Module):
+    def __init__(self):
+        super().__init__()
+
+        # Convert RGB image (3 channels)
+        # into 64 feature channel
+
+        self.stem = nn.Sequential(
+
+            nn.Conv2d(
+                in_channels=3,
+                out_channels=64,
+                kernel_size=3,
+                padding=1
+            ),
+
+            nn.BatchNorm2d(64),
+            nn.ReLU(inplace=True)
+        )
+
+        self.block1 = ClassicalBlock(64)
+        self.block2 = ClassicalBlock(64)
+        self.block3 = ClassicalBlock(64)
+        self.block4 = ClassicalBlock(64)
+
+        self.gap = nn.AdaptiveAvgPool2d((1,1))
+
+        self.flatten = nn.Flatten()
+
+    def forward(self, x):
+
+        x = self.stem(x)
+
+        x = self.block1(x)
+        x = self.block2(x)
+        x = self.block3(x)
+        x = self.block4(x)
+
+        x = self.gap(x)
+
+        x = self.flatten(x)
+
+        return x
+    
+
+n_qubits = 4
+dev = qml.device(
+    "default.qubit",
+    wires = n_qubits
+)
+
+@qml.qnode(dev, interface="torch")
+
+def quantum_circuit(inputs, weights):
+
+    # Angle Encoding
+    for i in range(4):
+        qml.Hadamard(wires=1)
+
+        qml.RZ(
+            inputs[i],
+            wires=i
+        )
+
+    # Trainable Layer 1
+    for i in range(4):
+        qml.RZ(
+            weights[i],
+            wires=i
+        )
+
+    # Entanglement
+    qml.CNOT(wires=[0,1])
+    qml.CNOT(wires=[1,2])
+    qml.CNOT(wires=[2,3])
+
+    # Trainable Layer 2
+    for i in range(4):
+        qml.RZ(
+            weights[4+i],
+            wires=i
+        )
+
+    # Entanglement
+    qml.CNOT(wires=[0,1])
+    qml.CNOT(wires=[1,2])
+    qml.CNOT(wires=[2,3])
+
+    # Trainable Layer 3
+    for i in range(4):
+        qml.RY(
+            weights[8+i],
+            wires=i
+        )
+
+    return qml.probs(wires=[0,1,2,3])
+
+class QuantumLayer(nn.Module):
+    def __init__(self):
+        super().__init__()
+        self.weights = nn.Parameter(
+            torch.randn(16)
+        )
+
+    def forward(self, x):
+        outputs = []
+        for sample in x:
+            result = quantum_circuit(
+                sample,
+                self.weights
+            )
+
+            # result = torch.stack(result)
+            outputs.append(result)
+
+        return torch.stack(outputs).float()
+    
+class QuCNet(nn.Module):
+    def __init__(self, num_classses=10):
+        super().__init__()
+
+        # Feature extractor
+        self.sfe = SFEModule()
+
+        # 16 parallel quantum layers
+        self.quantum_layers = nn.ModuleList(
+            [
+                QuantumLayer()
+                for _ in range(4)
+            ]
+        )
+
+        # Final classifier
+        self.classifier = nn.Sequential(
+            nn.Linear(256, 128),
+            nn.ReLU(),
+            nn.Linear(128, num_classses)
+        )
+
+    def forward(self, x):
+
+        # Extract features
+        features = self.sfe(x)
+
+        # shape:
+        # (B,64)
+
+        # Split into sixteen chunks
+        chunks = torch.chunk(
+            features,
+            chunks = 16,
+            dim=1,
+        )
+
+        q_outputs = []
+
+        # Pass each chunk through its quantum circuit
+        for i in range(16):
+
+            out = self.quantum_layers[i % 4](
+                chunks[i]
+            )
+
+            q_outputs.append(out)
+
+        # Concatenate outputs
+        quantum_features = torch.cat(
+            q_outputs,
+            dim=1
+        ).float()
+
+        # Shape:
+        # (B,64)
+
+        # quantum_features = torch.cat(
+        #     q_outputs,
+        #     dim=1
+        # ).float()
+
+        logits = self.classifier(
+            quantum_features
+        )
+
+        return logits
