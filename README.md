@@ -9,7 +9,7 @@ This project implements a hybrid quantum-classical neural network based on the a
 To validate the implementation, experiments are performed on the **CIFAR-10** dataset. The focus of this repository is on implementing and studying the architecture rather than reproducing the original remote sensing experiments reported in the paper.
 
 ## Key Features
-'''Complete implementation of the QuCNet architecture from scratch
+```Complete implementation of the QuCNet architecture from scratch
 Hybrid quantum-classical deep learning framework
 Scaled Feature Extractor (SFE)
 Multi-Circuit Quantum Embeddings
@@ -20,10 +20,10 @@ Checkpoint saving and automatic training resumption
 Training history logging
 Accuracy, Precision, Recall and F1-score tracking
 Metric visualization utilities
-'''
+```
 
 ## Architecture
-'''Input Image
+```Input Image
       │
       ▼
 Special Feature Extractor (SFE)
@@ -45,10 +45,10 @@ Fully Connected Classifier
       │
       ▼
 Prediction
-'''
+```
 
 ## Repository Structure
-'''QuCNet/
+```QuCNet/
 │
 ├── model.py               # QuCNet architecture
 ├── train.py               # Training pipeline
@@ -58,10 +58,10 @@ Prediction
 ├── checkpoint.pth         # Training checkpoint
 ├── best_model.pth         # Best model weights
 └── history.pth            # Saved training metrics
-'''
+```
 
 ## Model Components
-'''Classical Feature Extractor
+```Classical Feature Extractor
 Convolutional Stem
 Residual Classical Blocks
 Batch Normalization
@@ -77,11 +77,12 @@ Fully connected classifier
 Cross-Entropy loss
 Adam optimizer
 Cosine Annealing learning rate scheduler
-Training Pipeline'''
+Training Pipeline
+```
 
 ## The repository includes a complete training workflow featuring:
 
-'''Automatic checkpoint saving
+```Automatic checkpoint saving
 Resume training from interruption
 Training history persistence
 Accuracy computation
@@ -89,7 +90,8 @@ Precision computation
 Recall computation
 F1-score computation
 Best model checkpointing
-Dataset'''
+Dataset
+```
 
 For implementation verification, the architecture is trained and validated on CIFAR-10.
 
@@ -97,7 +99,7 @@ Note: The original paper evaluates QuCNet on remote sensing image datasets. This
 
 ## Training history includes:
 
-''Loss
+```Loss
 Accuracy
 Precision
 Recall
@@ -123,7 +125,7 @@ Performance optimization using PennyLane Lightning
 Benchmark comparison with the original paper
 Hyperparameter optimization
 Citation
-'''
+```
 
 If you use this implementation for academic or research purposes, please cite the original QuCNet paper.
 
