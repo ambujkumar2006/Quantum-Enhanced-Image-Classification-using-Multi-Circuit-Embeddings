@@ -9,7 +9,8 @@ This project implements a hybrid quantum-classical neural network based on the a
 To validate the implementation, experiments are performed on the **CIFAR-10** dataset. The focus of this repository is on implementing and studying the architecture rather than reproducing the original remote sensing experiments reported in the paper.
 
 ## Key Features
-```Complete implementation of the QuCNet architecture from scratch
+```
+Complete implementation of the QuCNet architecture from scratch
 Hybrid quantum-classical deep learning framework
 Scaled Feature Extractor (SFE)
 Multi-Circuit Quantum Embeddings
@@ -23,7 +24,8 @@ Metric visualization utilities
 ```
 
 ## Architecture
-```Input Image
+```
+Input Image
       │
       ▼
 Special Feature Extractor (SFE)
@@ -48,7 +50,8 @@ Prediction
 ```
 
 ## Repository Structure
-```QuCNet/
+```
+QuCNet/
 │
 ├── model.py               # QuCNet architecture
 ├── train.py               # Training pipeline
@@ -61,7 +64,8 @@ Prediction
 ```
 
 ## Model Components
-```Classical Feature Extractor
+```
+Classical Feature Extractor
 Convolutional Stem
 Residual Classical Blocks
 Batch Normalization
@@ -82,7 +86,8 @@ Training Pipeline
 
 ## The repository includes a complete training workflow featuring:
 
-```Automatic checkpoint saving
+```
+Automatic checkpoint saving
 Resume training from interruption
 Training history persistence
 Accuracy computation
